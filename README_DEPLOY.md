@@ -1,101 +1,67 @@
-# AnakBerani + Cloudflare Worker + D1
+# Deployment AnakBerani
 
-Arsitektur starter ini memakai satu Cloudflare Worker untuk:
-- menyajikan website statis dari folder `public/`
-- API di `/api/*`
-- database Cloudflare D1 melalui binding `DB`
+**Berani Aman, Lawan Bully** · Worker `anakberani-app` · D1 `anakberani-db`.
 
-## 1. Instal Node.js
-Pastikan Node.js 20+ tersedia:
+Status 3 Oktober 2026: belum live. Kredensial Cloudflare kedaluwarsa; `database_id` belum dapat ditetapkan. Jangan menganggap dry-run sebagai deployment.
 
-```bash
-node -v
-npm -v
-```
+## Deploy pertama atau deploy ulang
 
-## 2. Instal dependency
-
-```bash
-npm install
-```
-
-## 3. Login Cloudflare
-
-```bash
+```sh
+npm ci
 npx wrangler login
+npx wrangler whoami
+npm test
+npm run release
 ```
 
-## 4. Buat database D1
+Jika menggunakan API token, sediakan `CLOUDFLARE_API_TOKEN` dan `CLOUDFLARE_ACCOUNT_ID` melalui environment/secret manager. Jangan menaruh token dalam source atau commit. Untuk beberapa akun, tentukan `CLOUDFLARE_ACCOUNT_ID` yang benar.
 
-```bash
-npx wrangler d1 create anakberani-db --location apac
-```
+`release` membangun katalog, memeriksa login dan bundle, mencari D1 dengan nama `anakberani-db`, menggunakan database yang sudah ada atau membuatnya hanya jika tidak ditemukan, memperbarui `database_id`, menjalankan migrasi remote, membuat tipe, mendeploy Worker, dan memeriksa `/api/health`. Perintah berhenti ketika ada kegagalan. Tidak memerlukan `wrangler dev` atau localhost.
 
-Cloudflare akan menampilkan `database_id`. Salin ID tersebut ke `wrangler.jsonc`, menggantikan:
+Setelah persiapan pertama, commit perubahan `wrangler.jsonc` dan tipe yang dihasilkan. ID D1 bukan secret. Jangan mengganti database dengan yang kosong jika database lama sudah berisi data. Migrasi awal menggunakan CREATE IF NOT EXISTS agar schema starter tetap kompatibel; migrasi kedua menambah kolom/tabel dan memindahkan check-in berprofil tanpa menghapus tabel lama.
 
-```text
-GANTI_DENGAN_DATABASE_ID_D1
-```
+Deploy rutin juga dapat memakai:
 
-## 5. Buat tabel di D1 production
-
-```bash
+```sh
+npm run build
 npm run db:remote
-```
-
-Untuk database lokal saat development:
-
-```bash
-npm run db:local
-```
-
-## 6. Jalankan lokal
-
-```bash
-npm run dev
-```
-
-Buka URL yang ditampilkan Wrangler, biasanya `http://localhost:8787`.
-Tes API:
-
-```text
-http://localhost:8787/api/health
-```
-
-Harus mengembalikan JSON seperti `{ "ok": true, "service": "AnakBerani API" }`.
-
-## 7. Deploy
-
-```bash
 npm run deploy
 ```
 
-Worker akan mendapatkan URL `*.workers.dev`.
+`npm run deploy` mengasumsikan `database_id` sudah benar dan migrasi sudah diterapkan. URL berasal dari output Wrangler, berbentuk `https://anakberani-app.<subdomain-akun>.workers.dev`; subdomain belum diketahui sampai akses akun tersedia.
 
-## 8. GitHub
-Upload seluruh isi folder ini ke repository GitHub. Jangan upload `node_modules`.
+## Pemeriksaan live sesudah deploy
 
-## 9. Auto-deploy dari GitHub
-Di Cloudflare Dashboard buka **Workers & Pages**, buat Worker dari Git repository / Workers Builds, pilih repository AnakBerani, lalu gunakan konfigurasi Wrangler di repository sebagai sumber konfigurasi deploy.
+1. Buka URL Worker dan `/api/health`; pastikan HTTP 200 dan `ok: true`.
+2. Jalankan `npx wrangler tail anakberani-app --format json` selama pengujian. Jangan log password, cookie atau isi catatan anak.
+3. Daftar menggunakan akun pengujian milik Anda, buat dua profil dengan nama fiktif, dan uji login/logout/refresh.
+4. Simpan check-in dan catatan tanpa bukti; pastikan profil kedua tidak melihat data profil pertama.
+5. Lengkapi program hari pertama. Tombol harus nonaktif sebelum jawaban benar, seluruh misi, dan refleksi lengkap. Refresh, pilih kembali profil, dan periksa bahwa data bertahan.
+6. Selesaikan simulator dari jalur tenang dan jalur eskalasi, lalu periksa enam skor/progress.
+7. Buka browser console, periksa mobile dan desktop. Perbaiki setiap error sebelum mengumumkan URL live.
 
-## API starter
-- `GET /api/health`
-- `POST /api/register`
-- `POST /api/login`
-- `POST /api/logout`
-- `GET /api/me`
-- `GET|POST /api/children`
-- `GET|POST /api/checkins`
-- `GET|POST /api/incidents`
-- `GET|PUT /api/progress?child_id=...`
-- `GET /api/lessons/completed?child_id=...`
-- `POST /api/lessons/complete`
+Pengujian ini belum dijalankan di produksi karena akses Cloudflare belum tersedia. Tes runtime/D1 lokal dan alur browser sudah dijalankan; lihat README dan laporan hasil.
 
-### Penting
-Frontend v4 saat ini masih memakai `localStorage`. Backend sudah disiapkan, tetapi langkah berikutnya adalah mengganti penyimpanan frontend menjadi API setelah login. Jangan menyimpan nama sekolah lengkap, alamat, atau data sensitif lain yang tidak dibutuhkan.
+## Melihat D1
 
-## Program 30 Hari AnakBerani
-Versi ini memakai program interaktif 30 hari. Setiap hari memuat materi inti, satu skenario keputusan, beberapa misi praktik, refleksi anak, panduan orang tua, serta syarat kelulusan harian. Progress tersimpan lokal sampai integrasi akun/D1 diaktifkan penuh.
+Cloudflare Dashboard → pilih akun yang digunakan Wrangler → **Storage & databases → D1 → anakberani-db** → buka Console untuk SQL atau tabel data. `users`, `children` dan semua aktivitas berisi data privat: jangan membagikan hasil query yang mengandung data anak.
 
-Brand resmi aplikasi: **AnakBerani**  
-Slogan: **Berani Aman, Lawan Bully**
+Pemeriksaan schema melalui CLI:
+
+```sh
+npx wrangler d1 execute anakberani-db --remote --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+```
+
+## Custom domain
+
+Setelah domain ditambahkan sebagai zone aktif pada akun Cloudflare yang sama, buka **Workers & Pages → anakberani-app → Settings → Domains & Routes → Add → Custom Domain**. Pilih domain/subdomain milik Anda. Cloudflare mengelola DNS dan sertifikat yang diperlukan untuk custom domain Worker.
+
+Untuk mengelola lewat konfigurasi, tambahkan setelah nama domain diketahui:
+
+```json
+"routes": [{ "pattern": "app.domain-anda.id", "custom_domain": true }]
+```
+
+Lalu deploy ulang. Pertahankan `workers_dev: true` jika URL workers.dev tetap diinginkan. Semua API memakai URL relatif `/api`, jadi frontend dan backend tetap satu origin. Login ulang pada domain baru karena cookie bersifat per-host.
+
+Referensi resmi: [Wrangler](https://developers.cloudflare.com/workers/wrangler/), [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/), [Custom Domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
