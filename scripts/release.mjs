@@ -29,9 +29,13 @@ try{
  const result=wrangler(['deploy'],true);process.stdout.write(result);
  const live=result.match(/https:\/\/anakberani-app\.[a-z0-9-]+\.workers\.dev/);
  if(!live)throw new Error('Deploy selesai, tetapi URL workers.dev tidak ditemukan; periksa dashboard.');
- const response=await fetch(live[0]+'/api/health');
- const health=await response.json();
- if(!response.ok||health.ok!==true)throw new Error('Health check live gagal. Periksa wrangler tail.');
+ let healthy=false;
+ for(let attempt=0;attempt<6;attempt++){
+  try{const response=await fetch(live[0]+'/api/health',{signal:AbortSignal.timeout(10000)});const content=await response.text();healthy=response.ok&&content.startsWith('{')&&JSON.parse(content).ok===true;}catch{healthy=false;}
+  if(healthy)break;
+  if(attempt<5)await new Promise(resolve=>setTimeout(resolve,2000));
+ }
+ if(!healthy)throw new Error('Health check live gagal setelah retry. Periksa wrangler tail.');
  console.log('Health check D1 berhasil: '+live[0]);
  console.log('Lanjutkan pengujian register/login dan aktivitas di URL live. Commit database_id yang diperbarui.');
 }catch(error){console.error(error.message);process.exitCode=1;}

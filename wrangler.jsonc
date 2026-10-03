@@ -15,7 +15,7 @@
     {
       "binding": "DB",
       "database_name": "anakberani-db",
-      "database_id": "GANTI_DENGAN_DATABASE_ID_D1",
+      "database_id": "69ec8089-5888-47d7-9321-41d516e39b25",
       "migrations_dir": "migrations"
     }
   ],

@@ -2,7 +2,7 @@
 
 **Berani Aman, Lawan Bully** · Worker `anakberani-app` · D1 `anakberani-db`.
 
-Status 3 Oktober 2026: belum live. Kredensial Cloudflare kedaluwarsa; `database_id` belum dapat ditetapkan. Jangan menganggap dry-run sebagai deployment.
+Status 3 Oktober 2026: **live di https://anakberani-app.annasmashuri97.workers.dev**. D1 remote: `69ec8089-5888-47d7-9321-41d516e39b25`. Kedua migrasi berhasil diterapkan.
 
 ## Deploy pertama atau deploy ulang
 
@@ -28,7 +28,7 @@ npm run db:remote
 npm run deploy
 ```
 
-`npm run deploy` mengasumsikan `database_id` sudah benar dan migrasi sudah diterapkan. URL berasal dari output Wrangler, berbentuk `https://anakberani-app.<subdomain-akun>.workers.dev`; subdomain belum diketahui sampai akses akun tersedia.
+`npm run deploy` mengasumsikan `database_id` sudah benar dan migrasi sudah diterapkan. URL berasal dari output Wrangler, berbentuk `https://anakberani-app.<subdomain-akun>.workers.dev`; subdomain akun ini adalah `annasmashuri97`.
 
 ## Pemeriksaan live sesudah deploy
 
@@ -40,7 +40,7 @@ npm run deploy
 6. Selesaikan simulator dari jalur tenang dan jalur eskalasi, lalu periksa enam skor/progress.
 7. Buka browser console, periksa mobile dan desktop. Perbaiki setiap error sebelum mengumumkan URL live.
 
-Pengujian ini belum dijalankan di produksi karena akses Cloudflare belum tersedia. Tes runtime/D1 lokal dan alur browser sudah dijalankan; lihat README dan laporan hasil.
+Pengujian API live berhasil: health, register/login/logout, cookie secure, profil, check-in, kejadian tanpa bukti, validasi program, XP idempotent, simulator, materi, latihan bersama, dan isolasi kepemilikan. Pengujian memakai data sintetis terpisah dari data pengguna.
 
 ## Melihat D1
 

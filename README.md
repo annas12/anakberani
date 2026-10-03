@@ -6,7 +6,7 @@ Pendamping latihan anak dan orang tua. Satu akun orang tua memiliki beberapa pro
 
 ## Status
 
-Implementasi dan pengujian lokal selesai pada 3 Oktober 2026. **Belum dideploy ke Cloudflare**: otorisasi Wrangler kedaluwarsa dan pemilik akun belum dapat login ulang. `database_id` masih placeholder; tidak ada URL live yang sudah diverifikasi. Repository: https://github.com/annas12/anakberani.
+**Live:** https://anakberani-app.annasmashuri97.workers.dev — dideploy 3 Oktober 2026. Health check, register/login/logout, ownership, insert/read D1, program dan simulator telah diuji pada URL live dengan data sintetis. Repository: https://github.com/annas12/anakberani.
 
 ## Fitur
 
@@ -75,4 +75,4 @@ Untuk preview opsional: `npm run db:local` lalu `npm run dev`. **Localhost bukan
 
 ## Deploy dan domain
 
-Lihat [README_DEPLOY.md](README_DEPLOY.md). Worker: **anakberani-app**. D1: **anakberani-db**, binding **DB**. Belum ada domain live terkonfirmasi.
+Lihat [README_DEPLOY.md](README_DEPLOY.md). Worker: **anakberani-app**. D1: **anakberani-db**, binding **DB**. URL live: https://anakberani-app.annasmashuri97.workers.dev.
