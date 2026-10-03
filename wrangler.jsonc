@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "anakberani-app",
-  "main": "src/router.js",
+  "main": "src/access-gate.js",
   "compatibility_date": "2026-10-02",
   "assets": {
     "directory": "./public",
