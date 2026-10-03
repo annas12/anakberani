@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Akses - AnakBerani</title>
+  <style>
+    :root{font-family:Inter,system-ui,Arial,sans-serif;color:#172033;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}.wrap{max-width:1180px;margin:auto;padding:28px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:24px}.brand{font-size:26px;font-weight:800}.muted{color:#667085}.card{background:#fff;border:1px solid #e6eaf0;border-radius:18px;padding:20px;box-shadow:0 8px 24px rgba(16,24,40,.05);margin-bottom:20px}.grid{display:grid;grid-template-columns:2fr 1fr 1fr 2fr auto;gap:10px}.grid input,.grid select,.filters input,.filters select{width:100%;padding:12px 14px;border:1px solid #d0d5dd;border-radius:10px;background:white}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}.primary{background:#2d6cdf;color:white}.danger{background:#fee4e2;color:#b42318}.soft{background:#eef4ff;color:#3451b2}.filters{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;margin-bottom:16px}.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse;min-width:900px}.table th,.table td{text-align:left;padding:12px;border-bottom:1px solid #eaecf0;vertical-align:top}.pill{display:inline-block;padding:5px 8px;border-radius:999px;font-size:12px;font-weight:700}.active{background:#ecfdf3;color:#027a48}.revoked{background:#fef3f2;color:#b42318}.expired{background:#fff6ed;color:#b54708}.actions{display:flex;gap:6px;flex-wrap:wrap}.notice{padding:12px 14px;border-radius:10px;margin-top:12px;display:none}.ok{background:#ecfdf3;color:#027a48}.err{background:#fef3f2;color:#b42318}.stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px}.stat strong{display:block;font-size:22px}@media(max-width:800px){.wrap{padding:16px}.grid,.filters{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.card{padding:16px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div><div class="brand">AnakBerani Admin</div><div class="muted">Manajemen akses pembeli</div></div>
+      <a href="/" class="muted">← Kembali ke aplikasi</a>
+    </div>
+
+    <section class="card">
+      <h2>Tambah akses manual</h2>
+      <div class="grid">
+        <input id="email" type="email" placeholder="email pembeli" />
+        <select id="plan"><option value="6m">6 bulan</option><option value="1y" selected>1 tahun</option><option value="lifetime">Lifetime</option><option value="custom">Tanggal custom</option></select>
+        <input id="expires" type="date" disabled />
+        <input id="note" placeholder="Catatan internal (opsional)" />
+        <button class="btn primary" id="addBtn">Tambah Akses</button>
+      </div>
+      <div id="notice" class="notice"></div>
+    </section>
+
+    <section class="card">
+      <div class="filters">
+        <input id="search" placeholder="Cari email..." />
+        <select id="status"><option value="">Semua status</option><option value="active">Aktif</option><option value="revoked">Dicabut</option><option value="expired">Expired</option><option value="unactivated">Belum aktivasi</option><option value="activated">Sudah aktivasi</option></select>
+        <select id="source"><option value="">Semua sumber</option><option value="manual">Manual</option><option value="scalev">Scalev</option></select>
+        <button class="btn soft" id="filterBtn">Terapkan</button>
+      </div>
+      <div class="stats"><div class="stat"><span class="muted">Total</span><strong id="total">0</strong></div><div class="stat"><span class="muted">Halaman</span><strong id="page">1</strong></div></div>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Email</th><th>Status</th><th>Sumber</th><th>Masa akses</th><th>Aktivasi</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody id="rows"></tbody></table></div>
+      <div style="display:flex;gap:8px;margin-top:16px"><button class="btn soft" id="prev">← Sebelumnya</button><button class="btn soft" id="next">Berikutnya →</button></div>
+    </section>
+  </div>
+<script>
+let currentPage=1,lastTotal=0;const $=id=>document.getElementById(id);
+function notify(msg,error=false){const n=$('notice');n.textContent=msg;n.className='notice '+(error?'err':'ok');n.style.display='block';setTimeout(()=>n.style.display='none',4500)}
+function fmt(value){if(!value)return 'Lifetime';const d=new Date(value);return isNaN(d)?value:d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
+async function api(url,options={}){const res=await fetch(url,{credentials:'include',headers:{'Content-Type':'application/json',...(options.headers||{})},...options});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||'Permintaan gagal.');return data}
+function planPayload(){const plan=$('plan').value,payload={plan};if(plan==='custom'){if(!$('expires').value)throw new Error('Pilih tanggal berakhir.');payload.expires_at=new Date($('expires').value+'T23:59:59+07:00').toISOString()}return payload}
+$('plan').addEventListener('change',()=>{$('expires').disabled=$('plan').value!=='custom'});
+$('addBtn').addEventListener('click',async()=>{try{const payload={email:$('email').value,note:$('note').value,...planPayload()};await api('/api/admin/access',{method:'POST',body:JSON.stringify(payload)});$('email').value='';$('note').value='';notify('Akses berhasil disimpan.');currentPage=1;load()}catch(e){notify(e.message,true)}});
+$('filterBtn').addEventListener('click',()=>{currentPage=1;load()});$('search').addEventListener('keydown',e=>{if(e.key==='Enter'){currentPage=1;load()}});
+$('prev').addEventListener('click',()=>{if(currentPage>1){currentPage--;load()}});$('next').addEventListener('click',()=>{if(currentPage*25<lastTotal){currentPage++;load()}});
+async function revoke(id){if(!confirm('Cabut akses ini? Data anak tetap disimpan.'))return;try{await api('/api/admin/access/'+id+'/revoke',{method:'POST',body:'{}'});notify('Akses dicabut.');load()}catch(e){notify(e.message,true)}}
+async function reactivate(id){const choice=prompt('Ketik masa akses: 6m, 1y, atau lifetime','1y');if(!choice)return;try{await api('/api/admin/access/'+id+'/reactivate',{method:'POST',body:JSON.stringify({plan:choice})});notify('Akses diaktifkan kembali.');load()}catch(e){notify(e.message,true)}}
+async function editExpiry(id){const choice=prompt('Ketik masa akses baru: 6m, 1y, atau lifetime','1y');if(!choice)return;try{await api('/api/admin/access/'+id,{method:'PATCH',body:JSON.stringify({plan:choice,note:''})});notify('Masa akses diperbarui.');load()}catch(e){notify(e.message,true)}}
+async function load(){try{const q=new URLSearchParams({page:String(currentPage)});if($('search').value)q.set('search',$('search').value);if($('status').value)q.set('status',$('status').value);if($('source').value)q.set('source',$('source').value);const data=await api('/api/admin/access?'+q);lastTotal=data.total;$('total').textContent=data.total;$('page').textContent=data.page;$('rows').innerHTML=data.items.map(x=>`<tr><td><strong>${escapeHtml(x.email)}</strong><br><span class="muted">${x.display_name?escapeHtml(x.display_name):''}</span></td><td><span class="pill ${x.status}">${x.status}</span></td><td>${x.source}</td><td>${x.expires_at?fmt(x.expires_at):'Lifetime'}</td><td>${x.activated_at?'Sudah':'Belum'}</td><td>${escapeHtml(x.internal_note||'')}</td><td><div class="actions">${x.status==='active'?`<button class="btn danger" onclick="revoke('${x.id}')">Cabut</button>`:`<button class="btn primary" onclick="reactivate('${x.id}')">Aktifkan</button>`}<button class="btn soft" onclick="editExpiry('${x.id}')">Ubah Masa</button></div></td></tr>`).join('')||'<tr><td colspan="7" class="muted">Belum ada data.</td></tr>';$('prev').disabled=currentPage<=1;$('next').disabled=currentPage*25>=lastTotal}catch(e){if(e.message.includes('ADMIN_EMAILS'))notify('Admin belum dikonfigurasi di Cloudflare.',true);else notify(e.message,true)}}
+function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+load();
+</script>
+</body>
+</html>
